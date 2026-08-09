@@ -9,7 +9,9 @@ const int bordeIzq = 1;
 const int bordeDer = 95;
 const int bordeInf = 25;
 const int MAX_BALAS = 5;
-const int MAX_ENEMIGOS = 10;
+const int FILAS_ENEMIGOS = 3;
+const int COLS_ENEMIGOS = 8;
+const int MAX_ENEMIGOS = FILAS_ENEMIGOS * COLS_ENEMIGOS;
 
 // CLASE BASE 
 class Entidad {
@@ -38,18 +40,19 @@ public:
 	int getX() const { return x; }
 	int getY() const { return y; }
 	bool isActivo() const { return activo; }
+	void setActivo(bool _activo) { activo = _activo; }
 };
 
 // CLASE DERIVADA: ENEMIGO
 class Enemigo : public Entidad {
 public:
-	Enemigo(int _x, int _y) : Entidad(_x, _y, YELLOW) {}
+	Enemigo(int _x, int _y, int _color) : Entidad(_x, _y, _color) {}
 	
 	void dibujar() override {
 		if (!activo) return;
 		textcolor(color);
 		gotoxy(x, y);
-		cout << 'O'; // Dibujo de alienígena básico
+		cout << 'w'; // Dibujo de enemigo
 	}
 	
 	void moverPosicion(int dx, int dy) {
@@ -98,7 +101,7 @@ public:
 // NAVE (Jugador)
 class Jugador : public Entidad {
 public:
-	Jugador(int _x, int _y) : Entidad(_x, _y, LIGHTGREEN) {}
+	Jugador(int _x, int _y) : Entidad(_x, _y, YELLOW) {}
 	
 	void dibujar() override {
 		textcolor(color); 
@@ -122,32 +125,87 @@ public:
 		}
 	}
 };
-
+void verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
+	
+	for (int i = 0; i < MAX_BALAS; i++) {
+		
+		// Solo verificamos balas volando
+		
+		if (balas[i] != NULL && balas[i]->isActivo()) {
+			
+			for (int j = 0; j < MAX_ENEMIGOS; j++) {
+				
+				// Solo verificamos enemigos vivos
+				
+				if (enemigos[j] != NULL && enemigos[j]->isActivo()) {
+					
+					
+					
+					// ¿ESTÁN EN EL MISMO LUGAR DE LA PANTALLA?
+					
+					if (balas[i]->getX() == enemigos[j]->getX() && 
+						
+						balas[i]->getY() == enemigos[j]->getY()) {
+						
+						
+						
+						// ¡IMPACTO!
+						
+						balas[i]->borrar();
+						
+						balas[i]->setActivo(false); // La bala desaparece
+						
+						
+						
+						enemigos[j]->borrar();
+						
+						enemigos[j]->setActivo(false); // El enemigo muere
+						
+					}
+						
+				}
+				
+			}
+			
+		}
+		
+	}
+	
+} 
 int main() {
 	_setcursortype(_NOCURSOR); // Oculta el cursor de la consola
 	
-	// 1. Inicializar entidades
+	//Inicializar entidades
 	Jugador nave(40, 22);
 	nave.dibujar();
 	
 	Proyectil* balas[MAX_BALAS] = { NULL };
 	
+	// --- CREACIÓN DE ENEMIGOS EN FILAS Y COLORES ---
 	Enemigo* enemigos[MAX_ENEMIGOS];
-	for (int i = 0; i < MAX_ENEMIGOS; i++) {
-		enemigos[i] = new Enemigo(10 + i * 5, 4); // Distribuidos en fila
-		enemigos[i]->dibujar();
+	int coloresFilas[FILAS_ENEMIGOS] = { RED, LIGHTGREEN , BLUE }; // Color por cada fila
+	
+	int indice = 0;
+	for (int fila = 0; fila < FILAS_ENEMIGOS; fila++) {
+		for (int col = 0; col < COLS_ENEMIGOS; col++) {
+			int posX = 10 + (col * 5); // 5 espacios entre cada enemigo
+			int posY = 3 + (fila * 2); // 2 líneas de diferencia entre filas
+			int colorActual = coloresFilas[fila];
+			
+			enemigos[indice] = new Enemigo(posX, posY, colorActual);
+			enemigos[indice]->dibujar();
+			indice++;
+		}
 	}
 	
-	// Variables de control de enemigos
 	int direccion = 1; // 1 = Derecha, -1 = Izquierda
 	clock_t tempoEnemigos = clock();
 	clock_t pasoEnemigos = CLOCKS_PER_SEC / 2; // Se mueven cada medio segundo
 	
-	// 2. BUCLE ÚNICO DEL JUEGO
 	bool jugando = true;
 	while (jugando) {
 		
-		// --- A. DETECCIÓN DE TECLAS (JUGADOR) ---
+		//DETECCIÓN DE TECLAS (JUGADOR)
 		if (kbhit()) {
 			char tecla = getch();
 			if (tecla == 'a' || tecla == 'A') nave.moverIzquierda();
@@ -166,18 +224,19 @@ int main() {
 			if (tecla == 27) jugando = false; // Tecla ESC para salir
 		}
 		
-		// --- B. ACTUALIZACIÓN DE PROYECTILES ---
+		//ACTUALIZACIÓN DE PROYECTILES 
 		for (int i = 0; i < MAX_BALAS; i++) {
 			if (balas[i] != NULL) {
 				balas[i]->mover();
 			}
 		}
+		verificarColisiones(balas, enemigos);
 		
-		// --- C. MOVIMIENTO AUTOMÁTICO DE ENEMIGOS EN BLOQUE ---
+		//MOVIMIENTO AUTOMÁTICO DE ENEMIGOS EN BLOQUE 
 		if (clock() >= tempoEnemigos + pasoEnemigos) {
 			bool cambiarDireccion = false;
 			
-			// 1. ¿Alguno tocó la pared lateral?
+			//alguno tocó la pared lateral?
 			for (int i = 0; i < MAX_ENEMIGOS; i++) {
 				if (enemigos[i]->isActivo()) {
 					if ((enemigos[i]->getX() >= bordeDer - 2 && direccion == 1) ||
@@ -188,7 +247,7 @@ int main() {
 				}
 			}
 			
-			// 2. Si tocó la pared bajan 1 fila, si no avanzan a los costados
+			//Si tocó la pared bajan 1 fila, si no avanzan a los costados
 			int dx = cambiarDireccion ? 0 : direccion;
 			int dy = cambiarDireccion ? 1 : 0;
 			if (cambiarDireccion) direccion *= -1; // Invierte el sentido
@@ -201,7 +260,7 @@ int main() {
 		}
 	}
 	
-	// 3. LIBERACIÓN DE MEMORIA AL SALIR
+	//LIBERACIÓN DE MEMORIA AL SALIR
 	for (int i = 0; i < MAX_BALAS; i++) {
 		delete balas[i];
 	}
