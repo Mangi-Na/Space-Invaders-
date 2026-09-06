@@ -60,7 +60,7 @@ public:
 		if (!activo) return;
 		textcolor(color);
 		gotoxy(x, y);
-		cout << caracter; // Dibuja la forma específica del enemigo
+		cout << caracter; // Dibuja el enemigo
 	}
 	
 	void moverPosicion(int dx, int dy) {
@@ -91,7 +91,7 @@ private:
 	
 public:
 	Proyectil(int _x, int _y) : Entidad(_x, _y, LIGHTCYAN) {
-		paso = CLOCKS_PER_SEC / 40; // VELOCIDAD DEL DISPARO
+		paso = CLOCKS_PER_SEC / 25; // VELOCIDAD DEL DISPARO
 		tempo = clock();
 	}
 	
@@ -125,7 +125,7 @@ private:
 	
 public:
 	ProyectilEnemigo(int _x, int _y) : Entidad(_x, _y, LIGHTRED) {
-		paso = CLOCKS_PER_SEC / 20; // Velocidad del disparo enemigo
+		paso = CLOCKS_PER_SEC / 15; // Velocidad del disparo enemigo
 		tempo = clock();
 	}
 	
@@ -250,6 +250,16 @@ bool verificarVictoria(Enemigo* enemigos[]) {
 	}
 	return true;
 }
+bool verificarEnemigoInvasor(Enemigo* enemigos[], int yLimite) {
+	for (int i = 0; i < MAX_ENEMIGOS; i++) {
+		if (enemigos[i] != NULL && enemigos[i]->isActivo()) {
+			if (enemigos[i]->getY() >= yLimite) {
+				return true; // Un enemigo traspasó la línea
+			}
+		}
+	}
+	return false;
+}
 // Selecciona un enemigo activo al azar para que dispare hacia abajo
 void generarDisparoEnemigo(Enemigo* enemigos[], ProyectilEnemigo* balasEnemigas[]) {
 	int slotBala = -1;
@@ -277,10 +287,43 @@ void mostrarHUD(int puntaje, int vidas) {
 	gotoxy(75, 1);
 	cout << "Puntaje: " << puntaje;
 }
-
+void mostrarPantallaInicio() {
+	clrscr(); // Limpia la pantalla 
+	
+	textcolor(LIGHTCYAN);
+	gotoxy(20, 4);
+	cout << "Trabajo Practico Introduccion a la Programacion 2026";
+	
+	textcolor(YELLOW);
+	gotoxy(35, 6);
+	cout << "SPACE INVADERS LITE";
+	
+	textcolor(WHITE);
+	gotoxy(30, 9);
+	cout << "Instrucciones:";
+	
+	textcolor(LIGHTGRAY);
+	gotoxy(20, 12);
+	cout << "- Mover la nave: 'a' izquierda, 'd' derecha";
+	gotoxy(20, 14);
+	cout << "- Disparar: 'SPACE'";
+	gotoxy(20, 16);
+	cout << "- Evitar los disparos enemigos";
+	gotoxy(20, 18);
+	cout << "- Sobrevive y elimina a todos los enemigos";
+	
+	textcolor(LIGHTGREEN);
+	gotoxy(25, 22);
+	cout << "Presione cualquier tecla para empezar...";
+	
+	getch();  
+	clrscr(); 
+}
 int main() {
 	srand(time(NULL));
 	_setcursortype(_NOCURSOR); // Oculta el cursor de la consola
+	
+	mostrarPantallaInicio();
 	
 	int puntaje = 0;
 		
@@ -359,7 +402,7 @@ int main() {
 			if (balasEnemigas[i] != NULL) balasEnemigas[i]->mover();
 		}
 		
-		// COLISIÓN BALA ENEMIGA VS NAVE
+		// COLISIÓN BALA ENEMIGA A LA NAVE
 		if (verificarColisionJugador(balasEnemigas, nave)) {
 			bool sinVidas = nave.recibirDano(); // Resta vida y parpadea
 			mostrarHUD(puntaje, nave.getVidas()); // Actualiza el HUD
@@ -390,15 +433,19 @@ int main() {
 			for (int i = 0; i < MAX_ENEMIGOS; i++) {
 				enemigos[i]->moverPosicion(dx, dy);
 			}
+			// EVALUAR SI UN ENEMIGO LLEGÓ A LA ALTURA DE LA NAVE 
+			if (verificarEnemigoInvasor(enemigos, nave.getY())) {
+				jugando = false; // Game Over 
+			}
 			generarDisparoEnemigo(enemigos, balasEnemigas);
 			tempoEnemigos = clock();
 		}
 	}
-	// --- PANTALLA DE GAME OVER Y PAUSA ---
+	// PANTALLA DE GAME OVER 
 	if (victoria) {
 		textcolor(LIGHTGREEN);
 		gotoxy(38, 12);
-		cout << "VICTORIA!";
+		cout << "VICTORIA!!!";
 	} else {
 		textcolor(LIGHTRED);
 		gotoxy(38, 12);
