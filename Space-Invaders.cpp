@@ -70,19 +70,19 @@ public:
 		dibujar();
 	}
 	
-	// MÉTODO AGREGADO: Resta vida y desactiva el enemigo cuando llega a 0
+	// Resta vida y desactiva el enemigo cuando llega a 0
 	bool recibirDano() {
 		vida--;
 		if (vida <= 0) {
 			borrar();
 			activo = false;
-			return true; //Fue eliminado
+			return true; // Fue eliminado
 		}
-		return false; //Sigue vivo
+		return false; // Sigue vivo
 	}
 };
 
-//CLASE DERIVADA: PROYECTIL
+// CLASE DERIVADA: PROYECTIL
 class Proyectil : public Entidad {
 private:
 	clock_t tempo;
@@ -90,7 +90,7 @@ private:
 	
 public:
 	Proyectil(int _x, int _y) : Entidad(_x, _y, LIGHTCYAN) {
-		paso = CLOCKS_PER_SEC / 40; //VELOCIDAD DEL DISPARO
+		paso = CLOCKS_PER_SEC / 40; // VELOCIDAD DEL DISPARO
 		tempo = clock();
 	}
 	
@@ -115,7 +115,8 @@ public:
 		}
 	}
 };
-// NUEVA CLASE DERIVADA: PROYECTIL ENEMIGO (Va hacia abajo)
+
+// CLASE DERIVADA: PROYECTIL ENEMIGO (Va hacia abajo)
 class ProyectilEnemigo : public Entidad {
 private:
 	clock_t tempo;
@@ -148,6 +149,7 @@ public:
 		}
 	}
 };
+
 // NAVE (Jugador)
 class Jugador : public Entidad {
 public:
@@ -176,7 +178,10 @@ public:
 	}
 };
 
-void verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
+// MODIFICADO: Retorna los puntos obtenidos en las colisiones detectadas
+int verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
+	int puntosObtenidos = 0;
+	
 	for (int i = 0; i < MAX_BALAS; i++) {
 		if (balas[i] != NULL && balas[i]->isActivo()) {
 			for (int j = 0; j < MAX_ENEMIGOS; j++) {
@@ -188,8 +193,13 @@ void verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
 						balas[i]->borrar();
 						balas[i]->setActivo(false); 
 						
-						// El enemigo recibe daño y solo muere si su vida llega a 0
-						enemigos[j]->recibirDano();
+						// Suma puntos por cada impacto exitoso
+						puntosObtenidos += 10;
+						
+						// Si el disparo destruye al enemigo, da puntos extra
+						if (enemigos[j]->recibirDano()) {
+							puntosObtenidos += 20;
+						}
 						
 						break;
 					}
@@ -197,7 +207,9 @@ void verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
 			}
 		}
 	}
+	return puntosObtenidos;
 }
+
 // Detecta si una bala enemiga impacta en la nave del jugador
 bool verificarColisionJugador(ProyectilEnemigo* balasEnemigas[], Jugador& nave) {
 	for (int i = 0; i < MAX_BALAS_ENEMIGAS; i++) {
@@ -213,7 +225,6 @@ bool verificarColisionJugador(ProyectilEnemigo* balasEnemigas[], Jugador& nave) 
 
 // Selecciona un enemigo activo al azar para que dispare hacia abajo
 void generarDisparoEnemigo(Enemigo* enemigos[], ProyectilEnemigo* balasEnemigas[]) {
-	// Busca un espacio libre en el arreglo de balas enemigas
 	int slotBala = -1;
 	for (int i = 0; i < MAX_BALAS_ENEMIGAS; i++) {
 		if (balasEnemigas[i] == NULL || !balasEnemigas[i]->isActivo()) {
@@ -221,9 +232,8 @@ void generarDisparoEnemigo(Enemigo* enemigos[], ProyectilEnemigo* balasEnemigas[
 			break;
 		}
 	}
-	if (slotBala == -1) return; // Si están las 5 balas volando, no dispara
+	if (slotBala == -1) return; 
 	
-	// Elige un enemigo al azar
 	int indiceCandidato = rand() % MAX_ENEMIGOS;
 	if (enemigos[indiceCandidato] != NULL && enemigos[indiceCandidato]->isActivo()) {
 		delete balasEnemigas[slotBala];
@@ -233,9 +243,20 @@ void generarDisparoEnemigo(Enemigo* enemigos[], ProyectilEnemigo* balasEnemigas[
 													   );
 	}
 }
+
+// Muestra el puntaje en la esquina superior derecha
+void mostrarPuntaje(int puntaje) {
+	textcolor(WHITE);
+	gotoxy(75, 1);
+	cout << "Puntaje: " << puntaje;
+}
+
 int main() {
 	srand(time(NULL));
 	_setcursortype(_NOCURSOR); // Oculta el cursor de la consola
+	
+	int puntaje = 0;
+	mostrarPuntaje(puntaje);
 	
 	// Inicializar entidades
 	Jugador nave(40, 22);
@@ -244,21 +265,18 @@ int main() {
 	Proyectil* balas[MAX_BALAS] = { NULL };
 	ProyectilEnemigo* balasEnemigas[MAX_BALAS_ENEMIGAS] = { NULL };
 	
-	// --- DECLARACIÓN Y CREACIÓN DE ENEMIGOS ---
-	Enemigo* enemigos[MAX_ENEMIGOS]; // Arreglo declarado
+	Enemigo* enemigos[MAX_ENEMIGOS];
 	
-	// Configuración de cada fila: {Color, Forma, Vida/Resistencia}
-	int colores[FILAS_ENEMIGOS]     = { RED, LIGHTGREEN, BLUE };
-	char formas[FILAS_ENEMIGOS]     = { 'M', 'W', 'v' };
+	int colores[FILAS_ENEMIGOS]       = { RED, LIGHTGREEN, BLUE };
+	char formas[FILAS_ENEMIGOS]       = { 'M', 'W', 'v' };
 	int resistencias[FILAS_ENEMIGOS] = { 3, 2, 1 }; 
 	
 	int indice = 0;
 	for (int fila = 0; fila < FILAS_ENEMIGOS; fila++) {
 		for (int col = 0; col < COLS_ENEMIGOS; col++) {
-			int posX = 10 + (col * 5); // 5 espacios entre cada enemigo
-			int posY = 3 + (fila * 2); // 2 líneas de diferencia entre filas
+			int posX = 10 + (col * 5);
+			int posY = 3 + (fila * 2);
 			
-			// Instanciación con los parámetros correctos
 			enemigos[indice] = new Enemigo(posX, posY, colores[fila], formas[fila], resistencias[fila]);
 			enemigos[indice]->dibujar();
 			indice++;
@@ -267,7 +285,7 @@ int main() {
 	
 	int direccion = 1; // 1 = Derecha, -1 = Izquierda
 	clock_t tempoEnemigos = clock();
-	clock_t pasoEnemigos = CLOCKS_PER_SEC / 2; // Se mueven cada medio segundo
+	clock_t pasoEnemigos = CLOCKS_PER_SEC / 2;
 	
 	bool jugando = true;
 	while (jugando) {
@@ -278,7 +296,6 @@ int main() {
 			if (tecla == 'a' || tecla == 'A') nave.moverIzquierda();
 			if (tecla == 'd' || tecla == 'D') nave.moverDerecha();
 			
-			// Disparo
 			if (tecla == ' ') {
 				for (int i = 0; i < MAX_BALAS; i++) {
 					if (balas[i] == NULL || !balas[i]->isActivo()) {
@@ -298,13 +315,17 @@ int main() {
 			}
 		}
 		
-		verificarColisiones(balas, enemigos);
+		// SUMA PUNTOS Y ACTUALIZA PANTALLA
+		int nuevosPuntos = verificarColisiones(balas, enemigos);
+		if (nuevosPuntos > 0) {
+			puntaje += nuevosPuntos;
+			mostrarPuntaje(puntaje);
+		}
+		
 		// ACTUALIZACIÓN DE PROYECTILES ENEMIGOS 
 		for (int i = 0; i < MAX_BALAS_ENEMIGAS; i++) {
 			if (balasEnemigas[i] != NULL) balasEnemigas[i]->mover();
 		}
-		
-		verificarColisiones(balas, enemigos);
 		
 		// COLISIÓN BALA ENEMIGA VS NAVE
 		if (verificarColisionJugador(balasEnemigas, nave)) {
@@ -315,7 +336,6 @@ int main() {
 		if (clock() >= tempoEnemigos + pasoEnemigos) {
 			bool cambiarDireccion = false;
 			
-			// ¿Alguno tocó la pared lateral?
 			for (int i = 0; i < MAX_ENEMIGOS; i++) {
 				if (enemigos[i]->isActivo()) {
 					if ((enemigos[i]->getX() >= bordeDer - 2 && direccion == 1) ||
@@ -326,10 +346,9 @@ int main() {
 				}
 			}
 			
-			// Si tocó la pared bajan 1 fila, si no avanzan a los costados
 			int dx = cambiarDireccion ? 0 : direccion;
 			int dy = cambiarDireccion ? 1 : 0;
-			if (cambiarDireccion) direccion *= -1; // Invierte el sentido
+			if (cambiarDireccion) direccion *= -1;
 			
 			for (int i = 0; i < MAX_ENEMIGOS; i++) {
 				enemigos[i]->moverPosicion(dx, dy);
@@ -338,6 +357,19 @@ int main() {
 			tempoEnemigos = clock();
 		}
 	}
+	// --- PANTALLA DE GAME OVER Y PAUSA ---
+	textcolor(LIGHTRED);
+	gotoxy(38, 12);
+	cout << "G A M E   O V E R";
+	
+	gotoxy(33, 14);
+	textcolor(WHITE);
+	cout << "Puntaje Final: " << puntaje;
+	
+	gotoxy(28, 16);
+	cout << "Presiona cualquier tecla para salir...";
+	
+	getch();
 	
 	// LIBERACIÓN DE MEMORIA AL SALIR
 	for (int i = 0; i < MAX_BALAS; i++) {
