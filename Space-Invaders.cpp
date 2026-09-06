@@ -16,6 +16,15 @@ const int FILAS_ENEMIGOS = 3;
 const int COLS_ENEMIGOS = 8;
 const int MAX_ENEMIGOS = FILAS_ENEMIGOS * COLS_ENEMIGOS;
 
+void limpiarPantallaCompleta() {
+	for (int y = bordeSup; y <= bordeInf; y++) {
+		gotoxy(bordeIzq, y);
+		for (int x = bordeIzq; x <= bordeDer; x++) {
+			cout << ' ';
+		}
+	}
+}
+
 // CLASE BASE 
 class Entidad {
 protected:
@@ -197,7 +206,7 @@ public:
 };
 
 
-// MODIFICADO: Retorna los puntos obtenidos en las colisiones detectadas
+//Retorna los puntos obtenidos en las colisiones detectadas
 int verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
 	int puntosObtenidos = 0;
 	
@@ -215,7 +224,7 @@ int verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
 						// Suma puntos por cada impacto exitoso
 						puntosObtenidos += 10;
 						
-						// Si el disparo destruye al enemigo, da puntos extra
+						// Si el disparo destruye al enemigo da + puntos 
 						if (enemigos[j]->recibirDano()) {
 							puntosObtenidos += 20;
 						}
@@ -260,7 +269,7 @@ bool verificarEnemigoInvasor(Enemigo* enemigos[], int yLimite) {
 	}
 	return false;
 }
-// Selecciona un enemigo activo al azar para que dispare hacia abajo
+// Selecciona un enemigo al azar para que dispare hacia abajo
 void generarDisparoEnemigo(Enemigo* enemigos[], ProyectilEnemigo* balasEnemigas[]) {
 	int slotBala = -1;
 	for (int i = 0; i < MAX_BALAS_ENEMIGAS; i++) {
@@ -288,7 +297,6 @@ void mostrarHUD(int puntaje, int vidas) {
 	cout << "Puntaje: " << puntaje;
 }
 void mostrarPantallaInicio() {
-	clrscr(); // Limpia la pantalla 
 	
 	textcolor(LIGHTCYAN);
 	gotoxy(20, 4);
@@ -317,13 +325,14 @@ void mostrarPantallaInicio() {
 	cout << "Presione cualquier tecla para empezar...";
 	
 	getch();  
-	clrscr(); 
+	
 }
 int main() {
 	srand(time(NULL));
 	_setcursortype(_NOCURSOR); // Oculta el cursor de la consola
 	
 	mostrarPantallaInicio();
+	limpiarPantallaCompleta();
 	
 	int puntaje = 0;
 		
