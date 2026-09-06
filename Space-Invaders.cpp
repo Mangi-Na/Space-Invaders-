@@ -59,7 +59,7 @@ public:
 class Enemigo : public Entidad {
 private:
 	char caracter; // 'M', 'W', 'v'
-	int vida;      // Puntos de resistencia (1, 2, 3...)
+	int vida;      // Puntos de resistencia 
 	
 public:
 	Enemigo(int _x, int _y, int _color, char _caracter, int _vida) 
@@ -221,7 +221,7 @@ int verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
 						balas[i]->borrar();
 						balas[i]->setActivo(false); 
 						
-						// Suma puntos por cada impacto exitoso
+						// Suma puntos por cada impacto 
 						puntosObtenidos += 10;
 						
 						// Si el disparo destruye al enemigo da + puntos 
@@ -238,19 +238,19 @@ int verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
 	return puntosObtenidos;
 }
 
-// Detecta si una bala enemiga impacta en la nave del jugador
+// Detecta si una bala enemiga impacta al jugador
 bool verificarColisionJugador(ProyectilEnemigo* balasEnemigas[], Jugador& nave) {
 	for (int i = 0; i < MAX_BALAS_ENEMIGAS; i++) {
 		if (balasEnemigas[i] != NULL && balasEnemigas[i]->isActivo()) {
 			if (balasEnemigas[i]->getX() == nave.getX() && 
 				balasEnemigas[i]->getY() == nave.getY()) {
-				return true; // Hubo colisión
+				return true; // colisión
 			}
 		}
 	}
 	return false;
 }
-// Comprueba si ya no quedan enemigos activos en el mapa
+// Comprueba si ya no quedan enemigos activos 
 bool verificarVictoria(Enemigo* enemigos[]) {
 	for (int i = 0; i < MAX_ENEMIGOS; i++) {
 		if (enemigos[i] != NULL && enemigos[i]->isActivo()) {
@@ -263,7 +263,7 @@ bool verificarEnemigoInvasor(Enemigo* enemigos[], int yLimite) {
 	for (int i = 0; i < MAX_ENEMIGOS; i++) {
 		if (enemigos[i] != NULL && enemigos[i]->isActivo()) {
 			if (enemigos[i]->getY() >= yLimite) {
-				return true; // Un enemigo traspasó la línea
+				return true; // Un enemigo pasó la línea
 			}
 		}
 	}
@@ -283,10 +283,7 @@ void generarDisparoEnemigo(Enemigo* enemigos[], ProyectilEnemigo* balasEnemigas[
 	int indiceCandidato = rand() % MAX_ENEMIGOS;
 	if (enemigos[indiceCandidato] != NULL && enemigos[indiceCandidato]->isActivo()) {
 		delete balasEnemigas[slotBala];
-		balasEnemigas[slotBala] = new ProyectilEnemigo(
-													   enemigos[indiceCandidato]->getX(), 
-													   enemigos[indiceCandidato]->getY() + 1
-													   );
+		balasEnemigas[slotBala] = new ProyectilEnemigo(enemigos[indiceCandidato]->getX(),enemigos[indiceCandidato]->getY() + 1);
 	}
 }
 void mostrarHUD(int puntaje, int vidas) {
@@ -299,11 +296,15 @@ void mostrarHUD(int puntaje, int vidas) {
 void mostrarPantallaInicio() {
 	
 	textcolor(LIGHTCYAN);
-	gotoxy(20, 4);
+	gotoxy(20, 3);
 	cout << "Trabajo Practico Introduccion a la Programacion 2026";
 	
+	textcolor(WHITE);
+	gotoxy(35, 5);
+	cout << "Nadia Sofia Mangieri";
+	
 	textcolor(YELLOW);
-	gotoxy(35, 6);
+	gotoxy(35, 7);
 	cout << "SPACE INVADERS LITE";
 	
 	textcolor(WHITE);
@@ -329,7 +330,7 @@ void mostrarPantallaInicio() {
 }
 int main() {
 	srand(time(NULL));
-	_setcursortype(_NOCURSOR); // Oculta el cursor de la consola
+	_setcursortype(_NOCURSOR); // Oculta el cursor
 	
 	mostrarPantallaInicio();
 	limpiarPantallaCompleta();
@@ -370,7 +371,7 @@ int main() {
 	bool victoria = false;
 	while (jugando) {
 		
-		// DETECCIÓN DE TECLAS (JUGADOR)
+		//TECLAS (JUGADOR)
 		if (kbhit()) {
 			char tecla = getch();
 			if (tecla == 'a' || tecla == 'A') nave.moverIzquierda();
