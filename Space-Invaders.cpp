@@ -241,7 +241,15 @@ bool verificarColisionJugador(ProyectilEnemigo* balasEnemigas[], Jugador& nave) 
 	}
 	return false;
 }
-
+// Comprueba si ya no quedan enemigos activos en el mapa
+bool verificarVictoria(Enemigo* enemigos[]) {
+	for (int i = 0; i < MAX_ENEMIGOS; i++) {
+		if (enemigos[i] != NULL && enemigos[i]->isActivo()) {
+			return false;
+		}
+	}
+	return true;
+}
 // Selecciona un enemigo activo al azar para que dispare hacia abajo
 void generarDisparoEnemigo(Enemigo* enemigos[], ProyectilEnemigo* balasEnemigas[]) {
 	int slotBala = -1;
@@ -307,6 +315,7 @@ int main() {
 	clock_t pasoEnemigos = CLOCKS_PER_SEC / 2;
 	
 	bool jugando = true;
+	bool victoria = false;
 	while (jugando) {
 		
 		// DETECCIÓN DE TECLAS (JUGADOR)
@@ -339,6 +348,10 @@ int main() {
 		if (nuevosPuntos > 0) {
 			puntaje += nuevosPuntos;
 			mostrarHUD(puntaje, nave.getVidas());
+		}
+		if (verificarVictoria(enemigos)) {
+			victoria = true;
+			jugando = false;
 		}
 		
 		// ACTUALIZACIÓN DE PROYECTILES ENEMIGOS 
@@ -382,9 +395,15 @@ int main() {
 		}
 	}
 	// --- PANTALLA DE GAME OVER Y PAUSA ---
-	textcolor(LIGHTRED);
-	gotoxy(38, 12);
-	cout << "G A M E   O V E R";
+	if (victoria) {
+		textcolor(LIGHTGREEN);
+		gotoxy(38, 12);
+		cout << "VICTORIA!";
+	} else {
+		textcolor(LIGHTRED);
+		gotoxy(38, 12);
+		cout << "G A M E   O V E R";
+	}
 	
 	gotoxy(33, 14);
 	textcolor(WHITE);
