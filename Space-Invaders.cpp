@@ -2,6 +2,7 @@
 #include <conio2.h>
 #include <ctime>
 #include <cstdlib>
+#include <windows.h>
 
 using namespace std;
 
@@ -152,8 +153,10 @@ public:
 
 // NAVE (Jugador)
 class Jugador : public Entidad {
+private:
+	int vidas;
 public:
-	Jugador(int _x, int _y) : Entidad(_x, _y, YELLOW) {}
+	Jugador(int _x, int _y,int _vidas) : Entidad(_x, _y, YELLOW), vidas(_vidas){}
 	
 	void dibujar() override {
 		textcolor(color); 
@@ -176,7 +179,23 @@ public:
 			dibujar();
 		}
 	}
+	bool recibirDano() {
+		vidas--;
+		
+		// parpadeo al recibir daño
+		for (int i = 0; i < 3; i++) {
+			borrar();
+			Sleep(80);
+			dibujar();
+			Sleep(80);
+		}
+		
+		return vidas <= 0; // Retorna true si se quedó sin vidas
+	}
+	
+	int getVidas() const { return vidas; }
 };
+
 
 // MODIFICADO: Retorna los puntos obtenidos en las colisiones detectadas
 int verificarColisiones(Proyectil* balas[], Enemigo* enemigos[]) {
@@ -243,10 +262,10 @@ void generarDisparoEnemigo(Enemigo* enemigos[], ProyectilEnemigo* balasEnemigas[
 													   );
 	}
 }
-
-// Muestra el puntaje en la esquina superior derecha
-void mostrarPuntaje(int puntaje) {
+void mostrarHUD(int puntaje, int vidas) {
 	textcolor(WHITE);
+	gotoxy(5, 1);
+	cout << "Vidas: " << vidas << "   ";
 	gotoxy(75, 1);
 	cout << "Puntaje: " << puntaje;
 }
@@ -256,10 +275,10 @@ int main() {
 	_setcursortype(_NOCURSOR); // Oculta el cursor de la consola
 	
 	int puntaje = 0;
-	mostrarPuntaje(puntaje);
-	
+		
 	// Inicializar entidades
-	Jugador nave(40, 22);
+	Jugador nave(40, 22,3);
+	mostrarHUD(puntaje, nave.getVidas());
 	nave.dibujar();
 	
 	Proyectil* balas[MAX_BALAS] = { NULL };
@@ -319,7 +338,7 @@ int main() {
 		int nuevosPuntos = verificarColisiones(balas, enemigos);
 		if (nuevosPuntos > 0) {
 			puntaje += nuevosPuntos;
-			mostrarPuntaje(puntaje);
+			mostrarHUD(puntaje, nave.getVidas());
 		}
 		
 		// ACTUALIZACIÓN DE PROYECTILES ENEMIGOS 
@@ -329,7 +348,12 @@ int main() {
 		
 		// COLISIÓN BALA ENEMIGA VS NAVE
 		if (verificarColisionJugador(balasEnemigas, nave)) {
-			jugando = false; // Pierdes si te impactan
+			bool sinVidas = nave.recibirDano(); // Resta vida y parpadea
+			mostrarHUD(puntaje, nave.getVidas()); // Actualiza el HUD
+			
+			if (sinVidas) {
+				jugando = false; // Solo termina el juego si llega a 0 vidas
+			}
 		}
 		
 		// MOVIMIENTO AUTOMÁTICO DE ENEMIGOS EN BLOQUE 
@@ -366,9 +390,7 @@ int main() {
 	textcolor(WHITE);
 	cout << "Puntaje Final: " << puntaje;
 	
-	gotoxy(28, 16);
-	cout << "Presiona cualquier tecla para salir...";
-	
+
 	getch();
 	
 	// LIBERACIÓN DE MEMORIA AL SALIR
